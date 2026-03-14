@@ -30,6 +30,9 @@ CORS(app)  # Allows any screen/browser to call this feed
 # Keys are loaded from environment variables.
 # For local development, they are set in .env file.
 
+RAPIDAPI_KEY  = os.environ.get("RAPIDAPI_KEY")
+ANTHROPIC_KEY = os.environ.get("ANTHROPIC_KEY")
+
 print(f"[INIT] RAPIDAPI_KEY ends with: ...{RAPIDAPI_KEY[-4:]}", flush=True)
 print(f"[INIT] ANTHROPIC_KEY ends with: ...{ANTHROPIC_KEY[-4:]}", flush=True)
 
