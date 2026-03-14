@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>parmanoo.com · Feed</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #e8e2d8;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+
+  .browser {
+    width: 640px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.2);
+  }
+
+  .browser-bar {
+    background: #2a2520;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .url-bar {
+    flex: 1;
+    background: #3a3530;
+    border-radius: 5px;
+    padding: 5px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .url-bar span { color: rgba(255,255,255,0.75); }
+
+  .page {
+    background: #faf8f4;
+    padding: 32px 36px 40px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e4ddd2;
+  }
+
+  .brand {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #d4500a;
+    margin-bottom: 5px;
+  }
+
+  .updated {
+    font-size: 11px;
+    color: #9a948a;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #2d7a4f;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .dropdown-wrap { position: relative; }
+
+  .dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e4ddd2;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #18160f;
+    min-width: 120px;
+    justify-content: space-between;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #e4ddd2;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+    min-width: 120px;
+  }
+
+  .dropdown-item {
+    padding: 9px 14px;
+    font-size: 13px;
+    color: #5c5850;
+    border-bottom: 1px solid #f0ebe3;
+  }
+
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item.active { color: #d4500a; font-weight: 600; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #b0a898;
+    margin-bottom: 4px;
+  }
+
+  .incident {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 24px;
+    align-items: start;
+    padding: 16px 0;
+    border-bottom: 1px solid #e4ddd2;
+  }
+
+  .incident:last-child { border-bottom: none; }
+
+  .incident-road {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #18160f;
+    margin-bottom: 4px;
+  }
+
+  .incident-detail {
+    font-size: 13px;
+    color: #5c5850;
+    line-height: 1.5;
+  }
+
+  .incident-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #b0a898;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+
+  .footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e4ddd2;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #c0b8b0;
+  }
+
+  .footer strong { color: #d4500a; }
+</style>
+</head>
+<body>
+
+<div class="browser">
+  <div class="browser-bar">
+    <div class="dots">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+    </div>
+    <div class="url-bar">🔒 <span>parmanoo.com</span>/feed/mumbai</div>
+  </div>
+
+  <div class="page">
+    <div class="header">
+      <div>
+        <div class="brand">parmanoo.com</div>
+        <div class="updated">
+          <div class="live-dot"></div>
+          Refreshes every 15 min
+        </div>
+      </div>
+      <div class="dropdown-wrap">
+        <div class="dropdown-btn">Mumbai <span>▾</span></div>
+        <div class="dropdown-menu">
+          <div class="dropdown-item active">Mumbai</div>
+          <div class="dropdown-item">Delhi</div>
+          <div class="dropdown-item">Lucknow</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">3 incidents reported</div>
+
+    <div class="incident">
+      <div>
+        <div class="incident-road">Eastern Express Hwy</div>
+        <div class="incident-detail">Vehicle breakdown near Kurla flyover. Left lane blocked, expect delay northbound.</div>
+      </div>
+      <div class="incident-time">9:14 AM</div>
+    </div>
+
+    <div class="incident">
+      <div>
+        <div class="incident-road">Western Express Hwy</div>
+        <div class="incident-detail">Road repair work between Andheri and Vile Parle. Two lanes merged, traffic slow moving.</div>
+      </div>
+      <div class="incident-time">8:56 AM</div>
+    </div>
+
+    <div class="incident">
+      <div>
+        <div class="incident-road">LBS Marg</div>
+        <div class="incident-detail">Minor accident near Bhandup junction. Police on scene, right lane now clear.</div>
+      </div>
+      <div class="incident-time">8:47 AM</div>
+    </div>
+
+    <div class="footer">
+      <span>Data by <strong>parmanoo.com</strong></span>
+      <strong>Data available in JSON</strong>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
