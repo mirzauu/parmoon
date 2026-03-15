@@ -33,8 +33,8 @@ CORS(app)  # Allows any screen/browser to call this feed
 RAPIDAPI_KEY  = os.environ.get("RAPIDAPI_KEY")
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_KEY")
 
-print(f"[INIT] RAPIDAPI_KEY ends with: ...{RAPIDAPI_KEY[-4:]}", flush=True)
-print(f"[INIT] ANTHROPIC_KEY ends with: ...{ANTHROPIC_KEY[-4:]}", flush=True)
+print(f"[INIT] RAPIDAPI_KEY ends with: ...{RAPIDAPI_KEY[-4:] if RAPIDAPI_KEY else 'NONE'}", flush=True)
+print(f"[INIT] ANTHROPIC_KEY ends with: ...{ANTHROPIC_KEY[-4:] if ANTHROPIC_KEY else 'NONE'}", flush=True)
 
 POLICE_ACCOUNTS = {
     "mumbai":  "MTPHereToHelp",   # @MTPHereToHelp  — Mumbai Traffic Police
@@ -143,8 +143,13 @@ TWEETS:
     print(f"[CLAUDE AI] Prompting model: claude-3-5-sonnet-20241022", flush=True)
     
     try:
-        # Move client init inside try to catch dependency/initialization errors
-        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        import httpx
+        # We manually create the client to avoid 'proxies' keyword conflicts
+        # that sometimes happen in older/mixed environments.
+        client = anthropic.Anthropic(
+            api_key=ANTHROPIC_KEY,
+            http_client=httpx.Client()
+        )
         
         # Log a snippet of the prompt for debugging
         print(f"[CLAUDE AI] First 100 chars of instruction: {prompt[:100]}...", flush=True)
@@ -162,7 +167,9 @@ TWEETS:
         incidents = json.loads(raw_text)
         print(f"[CLAUDE AI] Successfully extracted {len(incidents)} incidents.", flush=True)
     except Exception as e:
+        import traceback
         print(f"AI Extraction Error: {e}", flush=True)
+        traceback.print_exc()
         # Fallback: very simple extraction for just the first incident if AI fails
         if tweets:
             first = tweets[0][:120] # Take a bit more for detail
