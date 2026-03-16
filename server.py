@@ -43,7 +43,7 @@ POLICE_ACCOUNTS = {
 }
 
 TWEETS_TO_FETCH   = 20   # Fetch last 20 tweets per account, keep top 3 incidents
-CACHE_TTL_SECONDS = 900  # Cache results for 15 minutes (reduces API calls)
+CACHE_TTL_SECONDS = 7200 # Cache results for 2 hours (reduces API calls)
 
 
 # ─── IN-MEMORY CACHE ─────────────────────────────────────────
@@ -99,6 +99,11 @@ def fetch_tweets(username: str) -> list[str]:
             seen.add(t)
             
     print(f"[TWITTER API] Found {len(cleaned)} unique tweets.", flush=True)
+    for i, t in enumerate(cleaned[:TWEETS_TO_FETCH]):
+        # Pre-clean newline for f-string to avoid backslash error
+        t_clean = t.replace("\n", " ")
+        print(f"  [{i+1}] {t_clean}", flush=True)
+
     return cleaned[:TWEETS_TO_FETCH]
 
 
@@ -182,10 +187,14 @@ TWEETS:
         else:
             return []
 
-    # Add a timestamp to each incident so the screen can show "X min ago"
-    now_iso = datetime.now(timezone.utc).isoformat()
+    # Add timestamps for machine (ISO) and human (Display) consumption
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    now_display = now.strftime("%d %b, %I:%M %p") # e.g. "16 Mar, 01:13 PM"
+    
     for inc in incidents:
         inc["reported_at"] = now_iso
+        inc["reported_at_display"] = now_display
 
     return incidents[:3]
 
@@ -240,7 +249,7 @@ def feed(city: str):
         cached = _cache.get(city)
         if cached:
             incidents = cached["data"]
-            updated = datetime.fromtimestamp(cached["fetched_at"], tz=timezone.utc).strftime("%-I:%M %p UTC")
+            updated = datetime.fromtimestamp(cached["fetched_at"], tz=timezone.utc).strftime("%d %b, %I:%M %p UTC")
             is_stale = True
         else:
             if e.response is not None and e.response.status_code == 403:
@@ -254,7 +263,7 @@ def feed(city: str):
         return jsonify({"error": "Unexpected server error", "detail": str(e)}), 500
 
     if 'updated' not in locals():
-        updated = datetime.now(timezone.utc).strftime("%-I:%M %p UTC")
+        updated = datetime.now(timezone.utc).strftime("%d %b, %I:%M %p UTC")
     
     is_stale = locals().get('is_stale', False)
 
@@ -500,7 +509,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="incident-road">{{ inc.road }}</div>
         <div class="incident-detail">{{ inc.detail }}</div>
       </div>
-      <div class="incident-time">{{ inc.reported_at }}</div>
+      <div class="incident-time">{{ inc.reported_at_display }}</div>
     </div>
     {% endfor %}
   {% else %}
