@@ -44,6 +44,7 @@ POLICE_ACCOUNTS = {
 
 TWEETS_TO_FETCH   = 20   # Fetch last 20 tweets per account, keep top 3 incidents
 CACHE_TTL_SECONDS = 7200 # Cache results for 2 hours (reduces API calls)
+REFRESH_LOCK_SECONDS = 3600 # Force-refresh is locked for 1 hour after use
 
 
 # ─── IN-MEMORY CACHE ─────────────────────────────────────────
@@ -51,6 +52,7 @@ CACHE_TTL_SECONDS = 7200 # Cache results for 2 hours (reduces API calls)
 # hit the Twitter API on every screen refresh.
 
 _cache = {}   # Structure: { "mumbai": { "data": [...], "fetched_at": timestamp } }
+_refresh_history = {} # Structure: { ip_address: timestamp_of_last_force_refresh }
 
 
 # ─── STEP 1: FETCH TWEETS FROM X/TWITTER ─────────────────────
@@ -242,7 +244,35 @@ def feed(city: str):
         return jsonify({"error": f"City '{city}' not supported. Use: mumbai, delhi, lucknow"}), 404
 
     try:
-        force = request.args.get("refresh") == "1"
+        # Get user IP for rate limiting the "force refresh" button
+        user_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        if "," in user_ip: user_ip = user_ip.split(",")[0].strip() # Handle proxy chains
+        
+        now_ts = time.time()
+        last_refresh = _refresh_history.get(user_ip, 0)
+        is_refresh_locked = (now_ts - last_refresh) < REFRESH_LOCK_SECONDS
+        
+        # Calculate countdown for UI
+        remaining_lock_sec = int(REFRESH_LOCK_SECONDS - (now_ts - last_refresh)) if is_refresh_locked else 0
+        remaining_minutes = (remaining_lock_sec // 60) + 1
+
+        force_requested = request.args.get("refresh") == "1"
+        force = False
+        refresh_denied = False
+
+        if force_requested:
+            if is_refresh_locked:
+                print(f"[RATE LIMIT] Refresh denied for {user_ip}. Locked for {remaining_minutes} more mins.", flush=True)
+                refresh_denied = True
+                force = False # Revert to serving from cache
+            else:
+                print(f"[RATE LIMIT] Refresh allowed for {user_ip}. Updating lock.", flush=True)
+                force = True
+                _refresh_history[user_ip] = now_ts
+                # Re-calculate lock status for the immediate UI response
+                is_refresh_locked = True
+                remaining_minutes = 60
+
         incidents = get_incidents_cached(city, force=force)
     except requests.RequestException as e:
         # Fallback to stale cache if network error occurs
@@ -276,6 +306,9 @@ def feed(city: str):
             incidents=incidents,
             updated=updated,
             is_stale=is_stale,
+            is_locked=is_refresh_locked,
+            lock_mins=remaining_minutes,
+            refresh_denied=refresh_denied,
             cities=list(POLICE_ACCOUNTS.keys())
         )
 
@@ -380,6 +413,31 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .refresh-btn:active { transform: translateY(0); }
     .refresh-btn svg { width: 14px; height: 14px; }
     
+    .refresh-btn.locked {
+        background: #e4ddd2;
+        color: #9a948a;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    .refresh-btn.locked:hover { transform: none; }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #18160f;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: 'Syne', sans-serif;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        z-index: 1000;
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+    
     .loading-overlay {
         display: none;
         position: fixed;
@@ -473,6 +531,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="section-label">Fetching Live Updates...</div>
   </div>
 
+  {% if refresh_denied %}
+  <div class="toast" id="toast">
+    Refresh locked. Please wait {{ lock_mins }} minutes.
+  </div>
+  <script>setTimeout(() => document.getElementById('toast').style.display='none', 5000);</script>
+  {% endif %}
+
   <div class="header">
     <div>
       <div class="brand">parmanoo.com</div>
@@ -496,10 +561,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             Status: Clear
         {% endif %}
     </div>
+    {% if is_locked %}
+    <div class="refresh-btn locked" title="Refresh available in {{ lock_mins }} minutes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Refresh ({{ lock_mins }}m)
+    </div>
+    {% else %}
     <a href="?refresh=1" class="refresh-btn" onclick="document.getElementById('loading').style.display='flex'">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       Refresh
     </a>
+    {% endif %}
   </div>
 
   {% if incidents %}
